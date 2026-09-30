@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Classic Playable Game Hub</title>
+    
+    <!-- 🔍 GOOGLE VERIFICATION PLACEHOLDER -->
+    <!-- REPLACE THE VALUE BELOW WITH YOUR ACTUAL STRING FROM GOOGLE SEARCH CONSOLE -->
+    <meta name="google-site-verification" content="YOUR_GOOGLE_CODE_HERE" />
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #0d0d0d;
+            color: #ffffff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #222;
+        }
+
+        h1 {
+            font-size: 22px;
+            letter-spacing: 1px;
+            background: linear-gradient(45deg, #ff3366, #ff9933);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lock-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .lock-btn:active { transform: scale(0.85); }
+
+        .secret-container {
+            display: none;
+            width: 100%;
+            max-width: 600px;
+            background: linear-gradient(135deg, #1f1115, #11111f);
+            border: 1px dashed #ff3366;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .secret-quote {
+            font-size: 16px;
+            font-style: italic;
+            color: #ff4d7d;
+            line-height: 1.5;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .game-card {
+            background-color: #161616;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 15px 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.1s, border-color 0.1s;
+        }
+        .game-card:active {
+            background-color: #222;
+            border-color: #ff3366;
+        }
+        .playable-badge {
+            display: inline-block;
+            background: #ff3366;
+            color: #fff;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .game-icon { font-size: 28px; display: block; margin-bottom: 5px; }
+        .game-title { font-size: 12px; font-weight: 600; color: #bbb; }
+
+        /* Mobile Game Overlay Screen */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(13, 13, 13, 0.98);
+            z-index: 1000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: #222; border: none; color: #fff;
+            padding: 8px 16px; border-radius: 20px; font-weight: bold;
+        }
+
+        /* --- SNAKE GAME INTERFACE --- */
+        #snakeCanvas {
+            background: #111;
+            border: 2px solid #333;
+            max-width: 100%;
+            aspect-ratio: 1/1;
+        }
+        .d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(3, 60px);
+            gap: 8px; margin-top: 15px;
+        }
+        .d-btn {
+            background: #222; border: 1px solid #444; color: white;
+            font-size: 20px; font-weight: bold; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .d-btn:active { background: #ff3366; }
+
+        /* --- TIC TAC TOE INTERFACE --- */
+        .ttt-board {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 8px; margin-bottom: 15px;
+        }
+        .ttt-cell {
+            background: #1a1a1a; border: 1px solid #333;
+            font-size: 32px; font-weight: bold; color: white;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px;
+        }
+        .ttt-cell:active { background: #222; }
+        #tttStatus { margin-bottom: 15px; font-size: 18px; color: #ff9933; }
+        .reset-btn { background: #ff3366; border: none; color: #fff; padding: 10px 20px; border-radius: 8px; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>CLASSIC HUB</h1>
+        <button class="lock-btn" onclick="checkPassword()">🔒</button>
+    </header>
+
+    <div id="secretSection" class="secret-container">
+        <p class="secret-quote">"In a room full of art, I'd still stare at you." ❤️</p>
+    </div>
+
+    <!-- 12 Cards (2 Playable, 10 Layout Placeholders) -->
+    <main class="grid">
+        <div class="game-card" onclick="openGame('snake')">
+            <span class="playable-badge">Play</span>
+            <span class="game-icon">🐍</span><div class="game-title">Snake</div>
+        </div>
+        <div class="game-card" onclick="openGame('ttt')">
+            <span class="playable-badge">Play</span>
+            <span class="game-icon">❌⭕</span><div class="game-title">Tic-Tac-Toe</div>
+        </div>
+        <div class="game-card" onclick="alert('Pac-Man expansion coming soon!')"><span class="game-icon">🕹️</span><div class="game-title">Pac-Man</div></div>
+        <div class="game-card" onclick="alert('Tetris expansion coming soon!')"><span class="game-icon">🧱</span><div class="game-title">Tetris</div></div>
+        <div class="game-card" onclick="alert('Space Invaders coming soon!')"><span class="game-icon">🚀</span><div class="game-title">Invaders</div></div>
+        <div class="game-card" onclick="alert('Pong coming soon!')"><span class="game-icon">🏓</span><div class="game-title">Pong</div></div>
+        <div class="game-card" onclick="alert('Minesweeper coming soon!')"><span class="game-icon">💣</span><div class="game-title">Mines</div></div>
+        <div class="game-card" onclick="alert('Frogger coming soon!')"><span class="game-icon">🐸</span><div class="game-title">Frogger</div></div>
+        <div class="game-card" onclick="alert('Dino Run coming soon!')"><span class="game-icon">🦖</span><div class="game-title">Dino Run</div></div>
+        <div class="game-card" onclick="alert('Chess coming soon!')"><span class="game-icon">♟️</span><div class="game-title">Chess</div></div>
+        <div class="game-card" onclick="alert('Solitaire coming soon!')"><span class="game-icon">🃏</span><div class="game-title">Solitaire</div></div>
+        <div class="game-card" onclick="alert('2048 coming soon!')"><span class="game-icon">🔢</span><div class="game-title">2048</div></div>
+    </main>
+
+    <!-- SNAKE OVERLAY SCREEN -->
+    <div id="snakeOverlay" class="overlay">
+        <button class="close-btn" onclick="closeGame('snake')">Exit</button>
+        <canvas id="snakeCanvas" width="280" height="280"></canvas>
+        <div class="d-pad">
+            <div></div><button class="d-btn" onclick="changeDir('UP')">▲</button><div></div>
+            <button class="d-btn" onclick="changeDir('LEFT')">◀</button><div></div><button class="d-btn" onclick="changeDir('RIGHT')">▶</button>
+            <div></div><button class="d-btn" onclick="changeDir('DOWN')">▼</button><div></div>
+        </div>
+    </div>
+
+    <!-- TIC TAC TOE OVERLAY SCREEN -->
+    <div id="tttOverlay" class="overlay">
+        <button class="close-btn" onclick="closeGame('ttt')">Exit</button>
+        <div id="tttStatus">Your Turn (X)</div>
+        <div class="ttt-board">
+            <div class="ttt-cell" onclick="makeMove(0)"></div>
+            <div class="ttt-cell" onclick="makeMove(1)"></div>
+            <div class="ttt-cell" onclick="makeMove(2)"></div>
+            <div class="ttt-cell" onclick="makeMove(3)"></div>
+            <div class="ttt-cell" onclick="makeMove(4)"></div>
+            <div class="ttt-cell" onclick="makeMove(5)"></div>
+            <div class="ttt-cell" onclick="makeMove(6)"></div>
+            <div class="ttt-cell" onclick="makeMove(7)"></div>
+            <div class="ttt-cell" onclick="makeMove(8)"></div>
+        </div>
+        <button class="reset-btn" onclick="resetTTT()">Restart</button>
+    </div>
+
+    <script>
+        // PASSWORD GATE
+        function checkPassword() {
+            var password = prompt("Enter password to unlock secret:");
+            if (password !== null) {
+                if (password == "fatema") {
+                    var secretDiv = document.getElementById("secretSection");
+                    secretDiv.style.display = "block";
+                    secretDiv.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    alert("Wrong password! Try again.");
+                }
+            }
+        }
+
+        // NAVIGATION SWITCHER
+        let snakeInterval;
+        function openGame(game) {
+            if(game === 'snake') {
+                document.getElementById('snakeOverlay').style.display = 'flex';
+                initSnake();
+            } else if(game === 'ttt') {
+                document.getElementById('tttOverlay').style.display = 'flex';
+                resetTTT();
+            }
+        }
+        function closeGame(game) {
+            if(game === 'snake') {
+                document.getElementById('snakeOverlay').style.display = 'none';
+                clearInterval(snakeInterval);
+            } else if(game === 'ttt') {
+                document.getElementById('tttOverlay').style.display = 'none';
+            }
+        }
+
+        // --- SNAKE SYSTEM GAME CODE ---
+        const canvas = document.getElementById("snakeCanvas");
+        const ctx = canvas.getContext("2d");
+        const box = 14; 
+        let snake, dir, food, score;
+
+        function initSnake() {
+            snake = [{x: 10 * box, y: 10 * box}];
+            dir = "RIGHT";
+            score = 0;
+            spawnFood();
+            clearInterval(snakeInterval);
+            snakeInterval = setInterval(drawSnakeGame, 130);
+        }
+        function spawnFood() {
+            food = {
+                x: Math.floor(Math.random() * 20) * box,
+                y: Math.floor(Math.random() * 20) * box
+            };
+        }
+        function changeDir(newDir) {
+            if(newDir === "LEFT" && dir !== "RIGHT") dir = "LEFT";
+            if(newDir === "UP" && dir !== "DOWN") dir = "UP";
+            if(newDir === "RIGHT" && dir !== "LEFT") dir = "RIGHT";
+            if(newDir === "DOWN" && dir !== "UP") dir = "DOWN";
+        }
+        function drawSnakeGame() {
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = (i === 0) ? "#ff3366" : "#bb224e";
+                ctx.fillRect(snake[i].x, snake[i].y, box, box);
+            }
+
+            ctx.fillStyle = "#ff9933";
+            ctx.fillRect(food.x, food.y, box, box);
+
+            let headX = snake[0].x;
+            let headY = snake[0].y;
+
+            if (dir === "LEFT") headX -= box;
+            if (dir === "UP") headY -= box;
+            if (dir === "RIGHT") headX += box;
+            if (dir === "DOWN") headY += box;
+
+            if (headX === food.x && headY === food.y) {
+                score++;
+                spawnFood();
+            } else {
+                snake.pop();
+            }
+
+            let newHead = { x: headX, y: headY };
+
+            if (headX < 0 || headY < 0 || headX >= canvas.width || headY >= canvas.height || collision(newHead, snake)) {
+                clearInterval(snakeInterval);
+                alert("Game Over! Score: " + score);
+                initSnake();
+                return;
+            }
+            snake.unshift(newHead);
+        }
+        function collision(head, array) {
+            for (let i = 0; i < array.length; i++) {
+                if (head.x === array[i].x && head.y === array[i].y) return true;
+            }
+            return false;
+        }
+
+        // --- TIC TAC TOE GAME CODE ---
+        let tttBoardState = ["", "", "", "", "", "", "", "", ""];
+        let isGameActive = true;
+        
+        function makeMove(index) {
+            if(tttBoardState[index] !== "" || !isGameActive) return;
+            
+            tttBoardState[index] = "X";
+            renderTTT();
+            if(checkTTTWin()) return;
+            
+            if(isGameActive) {
+                setTimeout(() => {
+                    let emptyIndices = tttBoardState.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+                    if(emptyIndices.length > 0) {
+                        let botMove = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+                        tttBoardState[botMove] = "O";
+                        renderTTT();
+                        checkTTTWin();
+                    }
+                }, 250);
+            }
+        }
+        function renderTTT() {
+            const cells = document.querySelectorAll(".ttt-cell");
+            cells.forEach((cell, idx) => {
+                cell.innerText = tttBoardState[idx];
+                cell.style.color = tttBoardState[idx] === "X" ? "#ff3366" : "#ff9933";
+            });
+        }
+        function checkTTTWin() {
+            const wins = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            let won = false;
+            for(let condition of wins) {
+                let a = tttBoardState[condition[0]];
+                let b = tttBoardState[condition[1]];
+                let c = tttBoardState[condition[2]];
+                if(a !== "" && a === b && a === c) {
+                    document.getElementById("tttStatus").innerText = a === "X" ? "You Win! 🎉" : "Computer Wins! 🤖";
+                    isGameActive = false;
+                    won = true;
+                    break;
+                }
+            }
+            if(!won && !tttBoardState.includes("")) {
+                document.getElementById("tttStatus").innerText = "It's a Draw! 🤝";
+                isGameActive = false;
+                return true;
+            }
+            return won;
+        }
+        function resetTTT() {
+            tttBoardState = ["", "", "", "", "", "", "", "", ""];
+            isGameActive = true;
+            document.getElementById("tttStatus").innerText = "Your Turn (X)";
+            renderTTT();
+        }
+    </script>
+</body>
+</html>
